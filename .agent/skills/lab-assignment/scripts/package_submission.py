@@ -17,6 +17,7 @@ import re
 import shutil
 import zipfile
 import subprocess
+import argparse
 from pathlib import Path
 
 # Add scripts directory to path to import render_html
@@ -41,7 +42,7 @@ def get_git_commit_log(repo_root, since=None, until=None):
     except Exception as e:
         return f"# Git Commit Log\n\nError executing git log: {e}\n"
 
-def validate_and_package(submission_dir, output_dir=None, auto_render=True, auto_git_log=True, since=None, until=None):
+def validate_and_package(submission_dir, output_dir=None, auto_render=True, auto_git_log=True, since=None, until=None, create_zip=False):
     sub_path = Path(submission_dir).resolve()
     if not sub_path.is_dir():
         print(f"[ERROR] Directory does not exist: {sub_path}")
@@ -124,37 +125,40 @@ def validate_and_package(submission_dir, output_dir=None, auto_render=True, auto
     if total_files > 20:
         print(f"[WARNING] Total files ({total_files}) exceeds Moodle link maximum of 20 files!")
 
-    # 5. Create zip archive: StudentID_WXX_YY.zip
-    target_zip_name = f"{student_id}_{week_num}_{yy_str}.zip"
-    out_dir = Path(output_dir).resolve() if output_dir else sub_path.parent
-    zip_target_path = out_dir / target_zip_name
+    # 5. Zip archive creation (Optional, disabled by default per user workflow)
+    if create_zip:
+        target_zip_name = f"{student_id}_{week_num}_{yy_str}.zip"
+        out_dir = Path(output_dir).resolve() if output_dir else sub_path.parent
+        zip_target_path = out_dir / target_zip_name
 
-    print(f"\n[INFO] Creating archive: {zip_target_path} ...")
-    with zipfile.ZipFile(zip_target_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for file_path in sub_path.rglob('*'):
-            # skip forbidden files/folders
-            rel_path = file_path.relative_to(sub_path.parent)
-            parts = rel_path.parts
-            if any(p in FORBIDDEN_DIRS for p in parts):
-                continue
-            if file_path.is_file():
-                zipf.write(file_path, arcname=rel_path)
+        print(f"\n[INFO] Creating archive: {zip_target_path} ...")
+        with zipfile.ZipFile(zip_target_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in sub_path.rglob('*'):
+                # skip forbidden files/folders
+                rel_path = file_path.relative_to(sub_path.parent)
+                parts = rel_path.parts
+                if any(p in FORBIDDEN_DIRS for p in parts):
+                    continue
+                if file_path.is_file():
+                    zipf.write(file_path, arcname=rel_path)
 
-    zip_size_mb = zip_target_path.stat().st_size / (1024 * 1024)
-    print(f"[OK] Archive successfully created: {zip_target_path.name} ({zip_size_mb:.2f} MB)")
+        zip_size_mb = zip_target_path.stat().st_size / (1024 * 1024)
+        print(f"[OK] Archive successfully created: {zip_target_path.name} ({zip_size_mb:.2f} MB)")
 
-    if zip_size_mb > 20.0:
-        print(f"[ALERT] Archive size ({zip_size_mb:.2f} MB) exceeds Moodle 20MB limit! Please split the archive.")
+        if zip_size_mb > 20.0:
+            print(f"[ALERT] Archive size ({zip_size_mb:.2f} MB) exceeds Moodle 20MB limit! Please split the archive.")
+        else:
+            print(f"[COMPLIANT] Size is within Moodle limit (< 20 MB).")
     else:
-        print(f"[COMPLIANT] Size is within Moodle limit (< 20 MB).")
+        print(f"\n[INFO] Folder finalization complete: '{sub_path.name}' is ready (NO ZIP CREATED per workflow).")
 
     return True
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python package_submission.py <submission_folder> [output_dir]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Validate and finalize submission folder according to Policies.md")
+    parser.add_argument("submission_folder", help="Path to student submission folder (StudentID_WXX)")
+    parser.add_argument("output_dir", nargs="?", default=None, help="Optional output directory for zip archive")
+    parser.add_argument("--zip", action="store_true", help="Create .zip archive (default is False; student self-checks archive)")
+    args = parser.parse_args()
 
-    sub_dir = sys.argv[1]
-    out_d = sys.argv[2] if len(sys.argv) > 2 else None
-    validate_and_package(sub_dir, out_d)
+    validate_and_package(args.submission_folder, args.output_dir, create_zip=args.zip)

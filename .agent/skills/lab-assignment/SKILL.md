@@ -4,11 +4,11 @@ description: >-
   Automates reading weekly lab assignment requirements, refining the student's draft work into Markdown,
   organizing files into ExerciseXX subfolders per course policies, discussing with the student, and upon approval,
   exporting Markdown to PDF using the yzane.markdown-pdf extension, generating the AI Usage Declaration & Git commit log,
-  and packaging into StudentID_WXX_YY.zip.
+  and leaving the finalized StudentID_WXX folder ready for review (DO NOT zip).
   Use this skill whenever the user provides weekly lab inputs in the format:
   <file path for that week exercise>
   <folderpath for tht week current work>
-  or asks to complete, refine, organize, split, or package lab assignments according to course policies.
+  or asks to complete, refine, organize, split, or finalize lab assignments according to course policies.
 ---
 
 # Lab Assignment Assistant & Auto-Organizer
@@ -35,8 +35,8 @@ Exercise 3 has been completed, DO NOT MODIFY.
 ## Two-Stage Workflow
 
 The workflow is strictly divided into two distinct stages:
-1. **Stage 1: Markdown Only & Discussion**: Refine and organize all work as `.md` files. Review and discuss with the student. **DO NOT** generate `.pdf` or `.zip` files yet.
-2. **Stage 2: Finalize & Package (Upon Approval)**: Only after the student reviews, discusses, and explicitly confirms/approves the work, export `.pdf` companions using `yzane.markdown-pdf`, extract the Git commit log, and build the `.zip` archive.
+1. **Stage 1: Markdown Only & Discussion**: Refine and organize all work as `.md` files. Review and discuss with the student. **DO NOT** generate `.pdf` files yet.
+2. **Stage 2: Finalize Folder (Upon Approval)**: Only after the student reviews, discusses, and explicitly confirms/approves the work, export `.pdf` companions using `yzane.markdown-pdf`, extract the Git commit log, and finalize the folder layout. **DO NOT zip the folder** (the student self-checks and packages the submission archive).
 
 ```mermaid
 flowchart TD
@@ -48,7 +48,7 @@ flowchart TD
     F -- No: Revise / Adjust --> C
     F -- Yes: Confirmed --> G["Phase 5: Export .pdf Companions (yzane.markdown-pdf)"]
     G --> H["Phase 6: Extract Git Log & AI Declaration"]
-    H --> I["Phase 7: Validate & Package StudentID_WXX_YY.zip"]
+    H --> I["Phase 7: Finalize & Validate Folder (NO ZIP)"]
 ```
 
 ---
@@ -147,21 +147,21 @@ Export `.pdf` files for all Markdown reports across all `ExerciseXX/` folders us
    ```
 2. Save the output in `StudentID_WXX/Git Commit Log.md`.
 
-### Phase 7: Automated Verification & Packaging
-1. Run the packaging helper script:
+### Phase 7: Folder Finalization & Verification (NO ZIP)
+1. Run the validation helper script:
    ```powershell
    python .agent/skills/lab-assignment/scripts/package_submission.py "<path_to_StudentID_WXX>"
    ```
 2. The script will:
    - Verify folder naming `StudentID_WXX`.
-   - Verify root files (`README.md`, `Git Commit Log.md`).
-   - Verify each `ExerciseXX/` directory has both `.md` and `.pdf` files.
+   - Ensure root files (`README.md`, `Git Commit Log.md`) are properly populated.
+   - Verify each `ExerciseXX/` directory has both `.md` and companion `.pdf` files.
    - Verify no forbidden directories (`node_modules`, `bin`, `obj`, `.venv`, `__pycache__`, `.vs`) are included.
-   - Compress the folder into `StudentID_WXX_YY.zip` where `YY` is the 2-digit exercise count (e.g., `25125048_W01_05.zip`).
-   - Check Moodle limits: Max 20 files, Max 20 MB archive size.
+   - Confirm total files count against Moodle limit ($\le 20$ files).
+   - **DO NOT compress into a `.zip` archive.** The folder remains intact as `StudentID_WXX/` for direct inspection and for running `/check-lab-assignment`.
 
 ### Phase 8: Final Submission Report
 Present the completion report with:
-- Summary of all files and folders created.
+- Summary of all files and folders created in `StudentID_WXX/`.
 - Confirmation that each exercise has its `.md` and `.pdf` pair.
-- Confirmation of zip archive location and size compliance.
+- Confirmation that the working folder is ready for auditing via `/check-lab-assignment` (zipping will be handled as a self-check by the student).
