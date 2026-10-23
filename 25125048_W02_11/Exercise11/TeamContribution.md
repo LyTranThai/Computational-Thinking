@@ -1,0 +1,1 @@
+We began by drafting several ideas, evaluating their pros and cons, and deciding together which approach would work best. Afterward, I took charge of creating the test cases and eveluate criteria. Since we coordinated entirely through Messenger, we don't have commit logs to track individual contributions.

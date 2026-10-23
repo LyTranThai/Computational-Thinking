@@ -1,75 +1,68 @@
 import sys
 import os
-import string
-
-# Equivalent to std::ios_base::sync_with_stdio(false); cin.tie(nullptr);
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_PATH = os.path.join(SCRIPT_DIR, "input.txt")
 
 if os.path.exists(INPUT_PATH):
     sys.stdin = open(INPUT_PATH, "r")
-    # sys.stdout = open("output.txt", "w")
 input = sys.stdin.readline
-# dp = [[0 for _ in range(100)] for _ in range(100)]
-dp = [0 for _ in range(101)]
-id = [0 for _ in range(101)]
-l = [0 for _ in range(101)]
-mem = [[0 for _ in range(2)] for _ in range(100)]
+
+
 def solve():
-    t, m = input().split()
-    t = int(t)
-    m = int(m)
-    c = 0
-    cur = 0
-    for g in range(t):
-        data = input().split()
-        if len(data) == 1:
-            for i in range(c):
-                if l[i] == 0:
-                    continue
-                id[i] = cur
-                for j in range(l[i]):
-                    dp[cur] = 1
-                    cur += 1
-        elif data[0] == "alloc":
-            length = int(data[1])
+    line = input().strip()
+    if not line:
+        return
+    t, m = map(int, line.split())
+    
+    mem = [0] * m
+    next_id = 1
+    
+    for _ in range(t):
+        cmd_parts = input().split()
+        if not cmd_parts:
+            continue
+        op = cmd_parts[0]
+        
+        if op == "alloc":
+            n = int(cmd_parts[1])
+            found_idx = -1
+            consecutive = 0
             for i in range(m):
-                if dp[i] == 0:
-                    save = i
-                    run = i
-                    count = 0
-                    while dp[run] == 0:
-                        count += 1
-                        if(count == length):
-                            # success
-                            for k in range(count):
-                                dp[save + k] = 1
-                            id[c]=save
-                            l[c] = length
-                            c += 1
-                            print(c+1)
-                            break
-            print("NULL")
-        else:
-            pos = int(data[1])
-            if(pos >= c or l[pos] == 0):
+                if mem[i] == 0:
+                    consecutive += 1
+                    if consecutive == n:
+                        found_idx = i - n + 1
+                        break
+                else:
+                    consecutive = 0
+            
+            if found_idx != -1:
+                allocated_id = next_id
+                next_id += 1
+                for i in range(found_idx, found_idx + n):
+                    mem[i] = allocated_id
+                print(allocated_id)
+            else:
+                print("NULL")
+                
+        elif op == "erase":
+            x = int(cmd_parts[1])
+            if x <= 0 or x not in mem:
                 print("ILLEGAL_ERASE_ARGUMENT")
-                continue
-            for i in range(l[pos]):
-                dp[id[pos] + i] = 0
-            l[pos] = 0
+            else:
+                for i in range(m):
+                    if mem[i] == x:
+                        mem[i] = 0
+                        
+        elif op == "defragment":
+            non_zeros = [val for val in mem if val != 0]
+            mem = non_zeros + [0] * (m - len(non_zeros))
+
 
 def main():
-    # print("Hello world")
     solve()
-    # If multiple test cases (t = int(input()))
-    # t_str = input().strip()
-    # if not t_str:
-    #     return
-    # t = int(t_str)
-    # for _ in range(t):
-    #     solve()
+
 
 if __name__ == "__main__":
     main()
